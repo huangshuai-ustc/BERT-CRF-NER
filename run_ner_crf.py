@@ -7,7 +7,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = '2'
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = '0'
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5, 6"
 import torch
 import torch.distributed
 import torch.nn as nn
@@ -16,8 +16,8 @@ from torch.utils.data.distributed import DistributedSampler
 from callback.optimizater.adamw import AdamW
 from callback.lr_scheduler import get_linear_schedule_with_warmup
 from callback.progressbar import ProgressBar
-from tools.common import seed_everything, init_logger, logger
-from tools.finetuning_argparse import get_argparse
+from tools.common import seed_everything, json_to_text
+from tools.common import init_logger, logger
 from processors.utils_ner import DataProcessor
 from transformers import WEIGHTS_NAME, BertConfig, get_linear_schedule_with_warmup, AdamW, BertTokenizer
 from models.bert_for_ner import BertCrfForNer
@@ -26,9 +26,10 @@ from processors.ner_seq import convert_examples_to_features
 from processors.ner_seq import ner_processors as processors
 from processors.ner_seq import collate_fn
 from metrics.ner_metrics import SeqEntityScore
-
+from tools.finetuning_argparse import get_argparse
 
 MODEL_CLASSES = {
+    ## bert ernie bert_wwm bert_wwwm_ext
     'bert': (BertConfig, BertCrfForNer, BertTokenizer),
 }
 if hasattr(torch.cuda, 'empty_cache'):
@@ -138,7 +139,12 @@ def train(args, train_dataset, model, tokenizer):
                 # XLM and RoBERTa don"t use segment_ids
                 inputs["token_type_ids"] = (batch[2] if args.model_type in ["bert", "xlnet"] else None)
             outputs = model(**inputs)
+            logger.info("outputs: %s", outputs[0])
+            logger.info("outputs: %s", outputs[1].shape)
+            logger.info("outputs: %s", outputs[1].sum(dim=(1, 2)))
+            logger.info("outputs: %s", outputs[1].sum(dim=(1, 2)).mean())
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+            logger.info("outputs: %s", outputs[0].mean())
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
             if args.gradient_accumulation_steps > 1:
@@ -215,6 +221,7 @@ def evaluate(args, model, tokenizer, prefix=""):
                 # XLM and RoBERTa don"t use segment_ids
                 inputs["token_type_ids"] = (batch[2] if args.model_type in ["bert", "xlnet"] else None)
             outputs = model(**inputs)
+
             tmp_eval_loss, logits = outputs[:2]
             tags = model.crf.decode(logits, inputs['attention_mask'])
         if args.n_gpu > 1:
@@ -417,7 +424,8 @@ def main():
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     config = config_class.from_pretrained(args.model_name_or_path, num_labels=num_labels, )
-    tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path, do_lower_case=args.do_lower_case, )
+    tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path,
+                                                do_lower_case=args.do_lower_case, )
     model = model_class.from_pretrained(args.model_name_or_path, config=config)
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab

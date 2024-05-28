@@ -1,6 +1,7 @@
 import csv
 import json
 import torch
+from transformers import BertTokenizer
 
 
 class DataProcessor(object):
@@ -34,22 +35,28 @@ class DataProcessor(object):
         with open(input_file, 'r') as f:
             words = []
             labels = []
+            masks = []
             for line in f:
+                print(line)
                 if line.startswith("-DOCSTART-") or line == "" or line == "\n":
                     if words:
-                        lines.append({"words": words, "labels": labels})
+                        lines.append({"words": words, "labels": labels, "masks": masks})
                         words = []
                         labels = []
+                        masks = []
                 else:
                     splits = line.split(" ")
+                    print(splits)
                     words.append(splits[0])
                     if len(splits) > 1:
-                        labels.append(splits[-1].replace("\n", ""))
+                        print(splits[1],splits[-1])
+                        labels.append(splits[1].replace("\n", ""))
+                        masks.append(int(splits[-1].replace("\n", "")))
                     else:
                         # Examples could have no label for mode = "test"
                         labels.append("O")
             if words:
-                lines.append({"words": words, "labels": labels})
+                lines.append({"words": words, "labels": labels, "masks": masks})
         return lines
 
     @classmethod

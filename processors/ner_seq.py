@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class InputExample(object):
     """A single training/test example for token classification."""
 
-    def __init__(self, guid, text_a, labels):
+    def __init__(self, guid, text_a, labels, masks):
         """Constructs a InputExample.
         Args:
             guid: Unique id for the example.
@@ -23,6 +23,7 @@ class InputExample(object):
         self.guid = guid
         self.text_a = text_a
         self.labels = labels
+        self.masks = masks
 
     def __repr__(self):
         return str(self.to_json_string())
@@ -133,7 +134,9 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.
-        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+        input_mask = example.masks
+        input_mask.insert(0, 1)
+        input_mask.append(0)
         input_len = len(label_ids)
         # Zero-pad up to the sequence length.
         padding_length = max_seq_length - len(input_ids)
@@ -149,7 +152,6 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
             label_ids += [pad_token] * padding_length
         # logger.info(len(label_ids))
         # logger.info(ex_index)
-        # logger.info(tokens)
         assert len(input_ids) == max_seq_length
         assert len(input_mask) == max_seq_length
         assert len(segment_ids) == max_seq_length
@@ -186,12 +188,6 @@ class NSProcessor(DataProcessor):
 
     def get_labels(self):
         """See base class."""
-        # return ["X",
-        #         "B-CVE", "B-CNVD", "B-CNNVD", 'B-NAM', 'B-TIM', 'B-TYP', 'B-SFT', 'B-VER', 'B-COM', 'B-IF', 'B-INF',
-        #         'B-LEV',
-        #         "I-CVE", "I-CNVD", "I-CNNVD", 'I-NAM', 'I-TIM', 'I-TYP', 'I-SFT', 'I-VER', 'I-COM', 'I-IF', 'I-INF',
-        #         'I-LEV',
-        #         "O", "[START]", "[END]"]
         return ["X",
                 "B-CVE", "B-CNVD", "B-CNNVD", 'B-NAM', 'B-TIM', 'B-TYP', 'B-SFT', 'B-VER', 'B-COM', 'B-IF', 'B-INF',
                 'B-OS', 'B-LEV', 'B-HAR',
@@ -207,9 +203,12 @@ class NSProcessor(DataProcessor):
             text_a = line['words']
             # BIOS
             labels = []
+            masks = []
             for x in line['labels']:
                 labels.append(x)
-            examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
+            for x in line['masks']:
+                masks.append(x)
+            examples.append(InputExample(guid=guid, text_a=text_a, labels=labels, masks=masks))
         return examples
 
 

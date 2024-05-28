@@ -1,9 +1,9 @@
+import torch
 from collections import Counter
 from processors.utils_ner import get_entities
 
-
 class SeqEntityScore(object):
-    def __init__(self, id2label, markup='bios'):
+    def __init__(self, id2label,markup='bios'):
         self.id2label = id2label
         self.markup = markup
         self.reset()
@@ -37,7 +37,7 @@ class SeqEntityScore(object):
         return {'acc': precision, 'recall': recall, 'f1': f1}, class_info
 
     def update(self, label_paths, pred_paths):
-        """
+        '''
         labels_paths: [[],[],[],....]
         pred_paths: [[],[],[],.....]
 
@@ -47,10 +47,10 @@ class SeqEntityScore(object):
         Example:
             >>> labels_paths = [['O', 'O', 'O', 'B-MISC', 'I-MISC', 'I-MISC', 'O'], ['B-PER', 'I-PER', 'O']]
             >>> pred_paths = [['O', 'O', 'B-MISC', 'I-MISC', 'I-MISC', 'I-MISC', 'O'], ['B-PER', 'I-PER', 'O']]
-        """
+        '''
         for label_path, pre_path in zip(label_paths, pred_paths):
-            label_entities = get_entities(label_path, self.id2label, self.markup)
-            pre_entities = get_entities(pre_path, self.id2label, self.markup)
+            label_entities = get_entities(label_path, self.id2label,self.markup)
+            pre_entities = get_entities(pre_path, self.id2label,self.markup)
             self.origins.extend(label_entities)
             self.founds.extend(pre_entities)
             self.rights.extend([pre_entity for pre_entity in pre_entities if pre_entity in label_entities])

@@ -74,17 +74,14 @@ def get_argparse():
                         help="If > 0: set total number of training steps to perform. Override num_train_epochs.", )
 
     parser.add_argument("--warmup_proportion", default=0.1, type=float,
-                        help="Proportion of training to perform linear learning rate warmup for,E.g., 0.1 = 10% of "
-                             "training.")
+                        help="Proportion of training to perform linear learning rate warmup for,E.g., 0.1 = 10% of training.")
     parser.add_argument("--logging_steps", type=int, default=50,
                         help="Log every X updates steps.")
     parser.add_argument("--save_steps", type=int, default=50, help="Save checkpoint every X updates steps.")
     parser.add_argument("--eval_all_checkpoints", action="store_true",
-                        help="Evaluate all checkpoints starting with the same prefix as model_name ending and ending "
-                             "with step number", )
+                        help="Evaluate all checkpoints starting with the same prefix as model_name ending and ending with step number", )
     parser.add_argument("--predict_checkpoints", type=int, default=0,
-                        help="predict checkpoints starting with the same prefix as model_name ending and ending with "
-                             "step number")
+                        help="predict checkpoints starting with the same prefix as model_name ending and ending with step number")
     parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
     parser.add_argument("--overwrite_output_dir", action="store_true",
                         help="Overwrite the content of the output directory")

@@ -1,6 +1,12 @@
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from .layers.crf import CRF
 from transformers import BertModel, BertPreTrainedModel
+from .layers.linears import PoolerEndLogits, PoolerStartLogits
+from torch.nn import CrossEntropyLoss
+from losses.focal_loss import FocalLoss
+from losses.label_smoothing import LabelSmoothingCrossEntropy
 
 
 class BertCrfForNer(BertPreTrainedModel):
@@ -22,4 +28,3 @@ class BertCrfForNer(BertPreTrainedModel):
             loss = self.crf(emissions=logits, tags=labels, mask=attention_mask)
             outputs = (-1 * loss,) + outputs
         return outputs  # (loss), scores
-
